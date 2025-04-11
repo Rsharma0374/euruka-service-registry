@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: service-registry
-          image: service-registry:latest
+          image: rsharma0374/service-registry:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761
