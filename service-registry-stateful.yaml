@@ -1,0 +1,21 @@
+# Eureka StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: eureka
+spec:
+  serviceName: "eureka"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: eureka
+  template:
+    metadata:
+      labels:
+        app: eureka
+    spec:
+      containers:
+        - name: eureka
+          image: rsharma0374/service-registry:latest
+          ports:
+            - containerPort: 8761

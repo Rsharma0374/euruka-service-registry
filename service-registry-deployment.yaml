@@ -1,20 +1,22 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: service-registry
-spec:
-  selector:
-    matchLabels:
-      app: service-registry
-  replicas: 3
-  template:
-    metadata:
-      labels:
-        app: service-registry
-    spec:
-      containers:
-        - name: service-registry
-          image: rsharma0374/service-registry:latest
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8761
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: service-registry
+#
+#spec:
+#  selector:
+#    matchLabels:
+#      app: service-registry
+#  replicas: 3
+#  template:
+#    metadata:
+#      labels:
+#        app: service-registry
+#    spec:
+#      containers:
+#        - name: service-registry
+#          image: rsharma0374/service-registry:latest
+#          imagePullPolicy: IfNotPresent
+#          ports:
+#            - containerPort: 8761
+#
