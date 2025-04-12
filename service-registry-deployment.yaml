@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: eureka-server
-          image: your-docker-registry/eureka-server:latest
+          image: rsharma0374/eureka-server:latest
           ports:
             - containerPort: 8761
           resources:
