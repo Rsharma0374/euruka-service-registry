@@ -1,11 +1,11 @@
-# Eureka StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: eureka
 spec:
-  serviceName: "eureka"
-  replicas: 3
+  serviceName: 'eureka'
+  # n instances
+  replicas: 1
   selector:
     matchLabels:
       app: eureka
@@ -16,6 +16,37 @@ spec:
     spec:
       containers:
         - name: eureka
-          image: rsharma0374/service-registry:latest
+          image: bitinit/eureka
           ports:
             - containerPort: 8761
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "1200Mi"
+              cpu: "500m"
+          env:
+            - name: EUREKA_SERVER_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: eureka-cm
+                  key: eureka_service_address
+            - name: ENVIRONMENT
+              value: "prod"
+            - name: JVM_OPTS
+              value: "-Xms1g -Xmx1g"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8761
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
