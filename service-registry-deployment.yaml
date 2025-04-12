@@ -1,22 +1,40 @@
-#apiVersion: apps/v1
-#kind: Deployment
-#metadata:
-#  name: service-registry
-#
-#spec:
-#  selector:
-#    matchLabels:
-#      app: service-registry
-#  replicas: 3
-#  template:
-#    metadata:
-#      labels:
-#        app: service-registry
-#    spec:
-#      containers:
-#        - name: service-registry
-#          image: rsharma0374/service-registry:latest
-#          imagePullPolicy: IfNotPresent
-#          ports:
-#            - containerPort: 8761
-#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  labels:
+    app: eureka-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+    spec:
+      containers:
+        - name: eureka-server
+          image: your-docker-registry/eureka-server:latest
+          ports:
+            - containerPort: 8761
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "0.5"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 5
