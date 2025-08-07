@@ -1,5 +1,5 @@
 # Multi-stage build for optimized image
-FROM maven:3.9-openjdk-21-slim AS build
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 
 WORKDIR /app
 
@@ -9,7 +9,10 @@ RUN mvn dependency:go-offline -B
 
 # Copy source code and build
 COPY src ./src
-RUN mvn clean package -DskipTests -B
+RUN mvn clean package -DskipTests -P prod -B
+
+# Debug: List generated JAR file (optional)
+RUN ls -la /app/target/
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -22,8 +25,8 @@ RUN apk add --no-cache curl
 
 WORKDIR /app
 
-# Copy the built JAR from build stage
-COPY --from=build /app/target/eureka-server-*.jar app.jar
+# Copy the built JAR (flexible name matching)
+COPY --from=build /app/target/*.jar app.jar
 
 # Change ownership to spring user
 RUN chown spring:spring app.jar
