@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eureka-server:latest
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_HOSTNAME=eureka-server
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - eureka-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.eureka.rule=Host(`eureka.localhost`)"
+      - "traefik.http.services.eureka.loadbalancer.server.port=8761"
+
+networks:
+  eureka-network:
+    driver: bridge
+
+# Optional: Add volume for logs
+volumes:
+  eureka-logs:
+    driver: local

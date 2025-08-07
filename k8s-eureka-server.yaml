@@ -1,0 +1,227 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: eureka-system
+  labels:
+    name: eureka-system
+
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eureka-server-config
+  namespace: eureka-system
+data:
+  application.yml: |
+    server:
+      port: 8761
+    spring:
+      application:
+        name: eureka-server
+      profiles:
+        active: kubernetes
+      security:
+        user:
+          name: admin
+          password: admin123
+          roles: ADMIN
+    eureka:
+      instance:
+        hostname: eureka-server-service
+        prefer-ip-address: false
+        lease-renewal-interval-in-seconds: 10
+        lease-expiration-duration-in-seconds: 20
+      client:
+        register-with-eureka: false
+        fetch-registry: false
+        service-url:
+          defaultZone: http://eureka-server-service:8761/eureka/
+      server:
+        enable-self-preservation: false
+        eviction-interval-timer-in-ms: 10000
+        renewal-percent-threshold: 0.85
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics
+      endpoint:
+        health:
+          show-details: always
+    logging:
+      level:
+        com.netflix.eureka: INFO
+        com.netflix.discovery: INFO
+
+---
+# Secret for sensitive data
+apiVersion: v1
+kind: Secret
+metadata:
+  name: eureka-server-secret
+  namespace: eureka-system
+type: Opaque
+data:
+  # admin123 base64 encoded
+  password: YWRtaW4xMjM=
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka-server
+  namespace: eureka-system
+  labels:
+    app: eureka-server
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka-server
+  template:
+    metadata:
+      labels:
+        app: eureka-server
+        version: v1
+    spec:
+      containers:
+        - name: eureka-server
+          image: eureka-server:latest
+          imagePullPolicy: Never  # Use local image
+          ports:
+            - containerPort: 8761
+              name: http
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "kubernetes"
+            - name: JAVA_OPTS
+              value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx512m"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8761
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8761
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config
+            - name: logs-volume
+              mountPath: /app/logs
+      volumes:
+        - name: config-volume
+          configMap:
+            name: eureka-server-config
+        - name: logs-volume
+          emptyDir: {}
+      restartPolicy: Always
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server-service
+  namespace: eureka-system
+  labels:
+    app: eureka-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8761
+      targetPort: 8761
+      protocol: TCP
+      name: http
+  selector:
+    app: eureka-server
+
+---
+# NodePort Service for external access (optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka-server-nodeport
+  namespace: eureka-system
+  labels:
+    app: eureka-server
+spec:
+  type: NodePort
+  ports:
+    - port: 8761
+      targetPort: 8761
+      nodePort: 30761
+      protocol: TCP
+      name: http
+  selector:
+    app: eureka-server
+
+---
+# Ingress (optional - requires ingress controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: eureka-server-ingress
+  namespace: eureka-system
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: eureka.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: eureka-server-service
+                port:
+                  number: 8761
+
+---
+# HorizontalPodAutoscaler (optional)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: eureka-server-hpa
+  namespace: eureka-system
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: eureka-server
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

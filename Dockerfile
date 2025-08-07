@@ -1,28 +1,45 @@
+# Multi-stage build for optimized image
+FROM maven:3.9.4-openjdk-21-slim AS build
 
-# Step 1: Build the Java Maven application
-FROM maven:3.9.9-eclipse-temurin-17 AS build
-# Set the working directory
-WORKDIR /build
+WORKDIR /app
 
-# Copy the Maven project files
+# Copy pom.xml first for better layer caching
 COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copy source code and build
 COPY src ./src
+RUN mvn clean package -DskipTests -B
 
-# Build the application
-RUN mvn clean package
+# Runtime stage
+FROM openjdk:21-jdk-slim
 
-# Stage 2: Run the application
-FROM openjdk:17-jdk-slim
+# Create non-root user for security
+RUN groupadd -r spring && useradd -r -g spring spring
 
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy Java application
-COPY --from=build /build/target/*.jar /app/service-registry.jar
+WORKDIR /app
 
-# Create logs directory
-RUN mkdir -p /opt/logs && chmod 755 /opt/logs
+# Copy the built JAR from build stage
+COPY --from=build /app/target/eureka-server-*.jar app.jar
 
-# Expose ports for Nginx and Java application
+# Change ownership to spring user
+RUN chown spring:spring app.jar
+
+# Switch to non-root user
+USER spring
+
+# Expose port
 EXPOSE 8761
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8761/actuator/health || exit 1
+
+# JVM optimization for containers
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+UseStringDeduplication"
+
 # Run the application
-ENTRYPOINT ["java", "-jar", "/app/service-registry.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --spring.profiles.active=docker"]
