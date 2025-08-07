@@ -1,5 +1,5 @@
 # Multi-stage build for optimized image
-FROM maven:3.9.4-openjdk-21-slim AS build
+FROM maven:3.9-openjdk-21-slim AS build
 
 WORKDIR /app
 
@@ -12,13 +12,13 @@ COPY src ./src
 RUN mvn clean package -DskipTests -B
 
 # Runtime stage
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-alpine
 
 # Create non-root user for security
-RUN groupadd -r spring && useradd -r -g spring spring
+RUN addgroup -g 1001 spring && adduser -u 1001 -G spring -s /bin/sh -D spring
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 WORKDIR /app
 
