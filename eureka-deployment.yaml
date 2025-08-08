@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: eureka-service
-          image: eureka-service:latest
+          image: rsharma0374/eureka-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761
