@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: eureka-server
+  name: eureka-service
   labels:
-    app: eureka-server
+    app: eureka-service
 spec:
   replicas: 3  # High Availability
   selector:
     matchLabels:
-      app: eureka-server
+      app: eureka-service
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -16,11 +16,11 @@ spec:
   template:
     metadata:
       labels:
-        app: eureka-server
+        app: eureka-service
     spec:
       containers:
-        - name: eureka-server
-          image: eureka-server:latest
+        - name: eureka-service
+          image: eureka-service:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8761

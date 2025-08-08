@@ -3,14 +3,14 @@ kind: Service
 metadata:
   name: eureka-service
   labels:
-    app: eureka-server
+    app: eureka-service
 spec:
   type: NodePort
   ports:
     - port: 8761
       targetPort: 8761
-      nodePort: 8761   # Fixed node port
+      nodePort: 30076   # in allowed range
       protocol: TCP
       name: http
   selector:
-    app: eureka-server
+    app: eureka-service
