@@ -7,61 +7,9 @@ spring:
 
 eureka:
   instance:
-    hostname: ${HOSTNAME}
-    prefer-ip-address: true
-    lease-renewal-interval-in-seconds: 10
-    lease-expiration-duration-in-seconds: 20
+    hostname: eureka-service  # Kubernetes service name
   client:
-    register-with-eureka: false
-    fetch-registry: false
-    service-url:
-      defaultZone: http://eureka-service:8761/eureka/
-  server:
-    enable-self-preservation: false
-    eviction-interval-timer-in-ms: 10000
-    renewal-percent-threshold: 0.85
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
-  info:
-    env:
-      enabled: true
-
-logging:
-  level:
-    com.netflix.eureka: INFO
-    com.netflix.discovery: INFO
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-
----
-# Docker profile
-spring:
-  config:
-    activate:
-      on-profile: docker
-eureka:
-  instance:
-    hostname: ${HOSTNAME:eureka-server}
-    prefer-ip-address: false
-
----
-# Kubernetes profile
-spring:
-  config:
-    activate:
-      on-profile: kubernetes
-eureka:
-  instance:
-    hostname: eureka-server-service
-    prefer-ip-address: false
-  client:
-    service-url:
-      defaultZone: http://eureka-server-service:8761/eureka/
+    registerWithEureka: false # Eureka server does not register itself
+    fetchRegistry: false      # Does not fetch registry (it's the server)
+    serviceUrl:
+      defaultZone: http://eureka-service:8761/eureka/  # Self-registration URL

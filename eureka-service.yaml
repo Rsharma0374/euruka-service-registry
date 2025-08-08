@@ -5,11 +5,10 @@ metadata:
   labels:
     app: eureka-service
 spec:
-  type: NodePort
+  type: LoadBalancer    # Changed from NodePort
   ports:
     - port: 8761
       targetPort: 8761
-      nodePort: 30076   # in allowed range
       protocol: TCP
       name: http
   selector:
