@@ -5,10 +5,11 @@ metadata:
   labels:
     app: eureka-server
 spec:
-  type: LoadBalancer  # NodePort for local testing
+  type: NodePort
   ports:
     - port: 8761
       targetPort: 8761
+      nodePort: 8761   # Fixed node port
       protocol: TCP
       name: http
   selector:
