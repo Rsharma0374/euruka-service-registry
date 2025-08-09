@@ -2,17 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: eureka-service
-  labels:
-    app: eureka-service
 spec:
-  replicas: 3  # High Availability
+  replicas: 1
   selector:
     matchLabels:
       app: eureka-service
-  strategy:
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -21,31 +15,6 @@ spec:
       containers:
         - name: eureka-service
           image: rsharma0374/eureka-service:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8761
-          env:
-            - name: SPRING_PROFILES_ACTIVE
-              value: "prod,k8s"
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "512Mi"
-            limits:
-              cpu: "1000m"
-              memory: "1024Mi"
-          livenessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8761
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8761
-            initialDelaySeconds: 20
-            periodSeconds: 5
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 1001
