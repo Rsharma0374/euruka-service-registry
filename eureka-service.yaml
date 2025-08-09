@@ -3,9 +3,11 @@ kind: Service
 metadata:
   name: eureka-service
 spec:
+  type: NodePort  # Change from ClusterIP to NodePort
   selector:
-    app: eureka-service
+    app: eureka-service  # Must match your pod label
   ports:
     - protocol: TCP
-      port: 80
+      port: 8761  # Should match container port
       targetPort: 8761
+      nodePort: 31000  # Optional: specify a node port
